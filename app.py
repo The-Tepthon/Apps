@@ -1,6 +1,8 @@
+
 from flask import Flask, request, jsonify, render_template
 from telethon import TelegramClient
 from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError
 import asyncio
 import os
 
@@ -43,7 +45,10 @@ def verify_code():
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
             await client.connect()
-            await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
+            try:
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+            except SessionPasswordNeededError:
+                await client.sign_in(password=password)
             return client.session.save()
 
     try:
