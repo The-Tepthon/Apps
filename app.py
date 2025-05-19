@@ -43,9 +43,18 @@ def verify_code():
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
             if password:
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
+                await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    phone_code_hash=phone_code_hash,
+                    password=password
+                )
             else:
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+                await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    phone_code_hash=phone_code_hash
+                )
             return client.session.save()
 
     try:
