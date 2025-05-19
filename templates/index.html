@@ -9,85 +9,67 @@
             font-family: 'Arial', sans-serif;
             text-align: center;
             padding-top: 60px;
-            margin: 0;
-            background-size: cover;
-            background-position: center;
+            background-color: #111;
             color: white;
-            transition: background-image 1s ease-in-out;
-        }
-
-        .container {
-            background-color: rgba(0,0,0,0.7);
-            padding: 30px;
-            border-radius: 10px;
-            width: 300px;
-            margin: auto;
         }
 
         input, button {
-            width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin: 8px;
+            width: 80%;
+            max-width: 300px;
             border-radius: 5px;
             border: none;
         }
 
         button {
             background-color: #0f0;
-            color: black;
-            cursor: pointer;
             font-weight: bold;
+            cursor: pointer;
         }
 
         .session-box {
-            background: #111;
-            padding: 15px;
             margin-top: 20px;
-            border-radius: 8px;
             display: none;
+        }
+
+        textarea {
+            width: 90%;
+            height: 100px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1 style="color:#0f0;">Tepthon</h1>
-    <p>استخراج جلسة تليثون - Telegram String Session</p>
+<h1 style="color:#0f0;">Tepthon</h1>
+<p>استخراج جلسة تليثون</p>
 
-    <input type="text" id="phone" placeholder="رقم الهاتف الدولي">
-    <input type="text" id="api_id" placeholder="API ID">
-    <input type="text" id="api_hash" placeholder="API HASH">
-    <button onclick="sendCode()">إرسال الكود</button>
+<input type="text" id="phone" placeholder="رقم الهاتف الدولي"><br>
+<input type="text" id="api_id" placeholder="API ID"><br>
+<input type="text" id="api_hash" placeholder="API HASH"><br>
+<button onclick="sendCode()">إرسال الكود</button><br>
 
-    <input type="text" id="code" placeholder="رمز التحقق">
-    <input type="text" id="password" placeholder="كلمة المرور (إن وجدت)">
-    <button onclick="verifyCode()">استخراج الجلسة</button>
+<input type="text" id="code" placeholder="رمز التحقق"><br>
+<input type="text" id="password" placeholder="كلمة المرور (إن وجدت)"><br>
+<button onclick="verifyCode()">استخراج الجلسة</button>
 
-    <div class="session-box" id="sessionBox">
-        <h3>الجلسة:</h3>
-        <textarea id="session" rows="4" cols="40" readonly></textarea>
-    </div>
+<div class="session-box" id="sessionBox">
+    <h3>الجلسة:</h3>
+    <textarea id="session" readonly></textarea>
 </div>
 
 <script>
 let phone_code_hash = "";
 
-function updateBackground() {
-    const now = new Date().toLocaleString("en-US", {timeZone: "Asia/Amman"});
-    const hour = new Date(now).getHours();
-    if (hour >= 6 && hour < 18) {
-        document.body.style.backgroundImage = "url('https://i.imgur.com/SOZhTzD.jpg')";
-    } else {
-        document.body.style.backgroundImage = "url('https://i.imgur.com/h1m2GSV.jpg')";
-    }
-}
-setInterval(updateBackground, 1000);
-updateBackground();
-
 function sendCode() {
     const phone = document.getElementById("phone").value;
     const api_id = document.getElementById("api_id").value;
     const api_hash = document.getElementById("api_hash").value;
+
+    if (!phone || !api_id || !api_hash) {
+        alert("الرجاء تعبئة جميع الحقول أولاً.");
+        return;
+    }
 
     fetch("/send-code", {
         method: "POST",
@@ -100,8 +82,12 @@ function sendCode() {
             phone_code_hash = data.phone_code_hash;
             alert("تم إرسال الكود بنجاح!");
         } else {
-            alert("خطأ: " + data.error);
+            alert("خطأ أثناء إرسال الكود: " + data.error);
         }
+    })
+    .catch(err => {
+        alert("حدث خطأ أثناء الاتصال بالسيرفر: " + err.message);
+        console.error("Error:", err);
     });
 }
 
@@ -112,10 +98,22 @@ function verifyCode() {
     const code = document.getElementById("code").value;
     const password = document.getElementById("password").value;
 
+    if (!phone || !api_id || !api_hash || !code || !phone_code_hash) {
+        alert("الرجاء تعبئة جميع الحقول مع الكود المستلم.");
+        return;
+    }
+
     fetch("/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, api_id, api_hash, code, password, phone_code_hash })
+        body: JSON.stringify({
+            phone,
+            api_id,
+            api_hash,
+            code,
+            password,
+            phone_code_hash
+        })
     })
     .then(res => res.json())
     .then(data => {
@@ -123,8 +121,12 @@ function verifyCode() {
             document.getElementById("session").value = data.session;
             document.getElementById("sessionBox").style.display = "block";
         } else {
-            alert("خطأ: " + data.error);
+            alert("فشل في استخراج الجلسة: " + data.error);
         }
+    })
+    .catch(err => {
+        alert("حدث خطأ أثناء الاتصال بالسيرفر: " + err.message);
+        console.error("Error:", err);
     });
 }
 </script>
