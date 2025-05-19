@@ -1,4 +1,4 @@
-
+from flask import render_template
 from flask import Flask, request, jsonify
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -6,6 +6,10 @@ import os
 
 app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return render_template("index.html")
+    
 @app.route('/send-code', methods=['POST'])
 def send_code():
     data = request.json
