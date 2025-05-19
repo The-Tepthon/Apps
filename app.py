@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify, render_template
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -39,15 +38,12 @@ def verify_code():
     api_hash = data["api_hash"]
     code = data["code"]
     phone_code_hash = data["phone_code_hash"]
-    password = data.get("password", None)
+    password = data.get("password")
 
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
             await client.connect()
-            if password:
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
-            else:
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+            await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
             return client.session.save()
 
     try:
