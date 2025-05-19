@@ -18,7 +18,7 @@ def send_code():
     api_id = int(data["api_id"])
     api_hash = data["api_hash"]
 
-    async def main():
+    async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
             result = await client.send_code_request(phone)
             return result.phone_code_hash
@@ -26,7 +26,7 @@ def send_code():
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        phone_code_hash = loop.run_until_complete(main())
+        phone_code_hash = loop.run_until_complete(run())
         return jsonify({"phone_code_hash": phone_code_hash})
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -41,7 +41,7 @@ def verify_code():
     phone_code_hash = data["phone_code_hash"]
     password = data.get("password", None)
 
-    async def main():
+    async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
             await client.connect()
             if password:
@@ -53,7 +53,7 @@ def verify_code():
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        session = loop.run_until_complete(main())
+        session = loop.run_until_complete(run())
         return jsonify({"session": session})
     except Exception as e:
         return jsonify({"error": str(e)})
