@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify, render_template
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -8,15 +7,15 @@ import asyncio
 app = Flask(__name__)
 
 @app.route("/")
-def index():
+def home():
     return render_template("index.html")
 
 @app.route("/send-code", methods=["POST"])
 def send_code():
     data = request.json
-    phone = data["phone"]
-    api_id = int(data["api_id"])
-    api_hash = data["api_hash"]
+    phone = data.get('phone')
+    api_id = int(data.get('api_id'))
+    api_hash = data.get('api_hash')
 
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
@@ -34,12 +33,12 @@ def send_code():
 @app.route("/verify-code", methods=["POST"])
 def verify_code():
     data = request.json
-    phone = data["phone"]
-    api_id = int(data["api_id"])
-    api_hash = data["api_hash"]
-    code = data["code"]
-    password = data.get("password", None)
-    phone_code_hash = data["phone_code_hash"]
+    phone = data.get('phone')
+    api_id = int(data.get('api_id'))
+    api_hash = data.get('api_hash')
+    code = data.get('code')
+    password = data.get('password', None)
+    phone_code_hash = data.get('phone_code_hash')
 
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
