@@ -9,7 +9,7 @@ services:
     plan: free
     name: Best-Render
     env: python
-    repo: https://github.com/zxaax/app
+    repo: https://github.com/The-Tepthon/Apps
     buildCommand: pip install -U -r requirements.txt
     startCommand: python3 app.py
     region: frankfurt
