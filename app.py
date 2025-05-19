@@ -75,7 +75,7 @@ def verify_code():
                     return 'invalid_code'
 
             session_string = client.session.save()
-            await client.send_message('me', f'تم استخراج الجلسة بواسطة @Tepthon\n\n{session_string}')
+            await client.send_message('me', f'تم استخراج الجلسة بواسطة @Tepthon\\n\\n{session_string}')
             return 'success'
 
     try:
@@ -98,7 +98,7 @@ def verify_2fa():
         async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
             await client.sign_in(phone=phone, password=password)
             session_string = client.session.save()
-            await client.send_message('me', f'تم استخراج الجلسة بواسطة @Tepthon\n\n{session_string}')
+            await client.send_message('me', f'تم استخراج الجلسة بواسطة @Tepthon\\n\\n{session_string}')
 
     try:
         asyncio.run(verify_2fa_async())
