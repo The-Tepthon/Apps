@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>Tepthon - استخراج الجلسة</title>
+    <style>
+        body { background: #121212; color: white; font-family: Arial; text-align: center; padding-top: 50px; }
+        input, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; width: 250px; }
+        button { background-color: #0f0; cursor: pointer; }
+        .session-box { background: #222; padding: 20px; margin-top: 20px; border-radius: 10px; display: none; }
+    </style>
+</head>
+
+<body>
+<div id="time-weather" style="position: absolute; top: 10px; left: 10px; text-align: left;">
+    <div id="clock" style="font-size: 18px;"></div>
+    <div id="icon" style="font-size: 30px;">☀️</div>
+</div>
+
+<script>
+function updateClockAndIcon() {
+    const options = { timeZone: "Asia/Amman", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
+    const now = new Date().toLocaleTimeString("en-US", options);
+    document.getElementById("clock").textContent = now;
+
+    const hour = parseInt(now.split(":")[0]);
+    const icon = document.getElementById("icon");
+
+    if (hour >= 6 && hour < 18) {
+        icon.textContent = "☀️"; // نهار
+    } else {
+        icon.textContent = "🌧️"; // ليل/مطر
+    }
+}
+
+setInterval(updateClockAndIcon, 1000);
+updateClockAndIcon();
+</script>
+
+
+<h1 style="color: #0f0; animation: bounce 1s infinite;">Tepthon</h1>
+<p>استخراج جلسة تليثون - Telegram String Session</p>
+
+<input type="text" id="phone" placeholder="رقم الهاتف الدولي"><br>
+<input type="text" id="api_id" placeholder="API ID"><br>
+<input type="text" id="api_hash" placeholder="API HASH"><br>
+<button onclick="sendCode()">إرسال الكود</button><br>
+
+<input type="text" id="code" placeholder="رمز التحقق"><br>
+<input type="text" id="password" placeholder="كلمة المرور (إن وُجد)"><br>
+<button onclick="verifyCode()">استخراج الجلسة</button>
+
+<div class="session-box" id="sessionBox">
+    <h3>الجلسة:</h3>
+    <textarea id="session" rows="5" cols="40" readonly></textarea>
+</div>
+
+<script>
+let phone_code_hash = "";
+
+function sendCode() {
+    const phone = document.getElementById("phone").value;
+    const api_id = document.getElementById("api_id").value;
+    const api_hash = document.getElementById("api_hash").value;
+
+    fetch("/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, api_id, api_hash })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.phone_code_hash) {
+            phone_code_hash = data.phone_code_hash;
+            alert("تم إرسال الكود بنجاح!");
+        } else {
+            alert("فشل الإرسال: " + data.error);
+        }
+    });
+}
+
+function verifyCode() {
+    const phone = document.getElementById("phone").value;
+    const api_id = document.getElementById("api_id").value;
+    const api_hash = document.getElementById("api_hash").value;
+    const code = document.getElementById("code").value;
+    const password = document.getElementById("password").value;
+
+    fetch("/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, api_id, api_hash, code, password, phone_code_hash })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.session) {
+            document.getElementById("session").value = data.session;
+            document.getElementById("sessionBox").style.display = "block";
+        } else {
+            alert("خطأ: " + data.error);
+        }
+    });
+}
+</script>
+
+</body>
+</html>
