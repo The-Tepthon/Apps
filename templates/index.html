@@ -10,109 +10,79 @@
             text-align: center;
             padding-top: 60px;
             margin: 0;
-            transition: background 1s ease-in-out;
-            background: #000;
+            background-size: cover;
+            background-position: center;
             color: white;
+            transition: background-image 1s ease-in-out;
         }
 
-        .day {
-            background: linear-gradient(to bottom, #87CEEB, #ffffff);
-            color: #000;
-        }
-
-        .night {
-            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
-            color: #fff;
+        .container {
+            background-color: rgba(0,0,0,0.7);
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+            margin: auto;
         }
 
         input, button {
+            width: 100%;
             padding: 10px;
-            margin: 5px;
+            margin: 10px 0;
             border-radius: 5px;
             border: none;
-            width: 260px;
         }
 
         button {
             background-color: #0f0;
+            color: black;
             cursor: pointer;
+            font-weight: bold;
         }
 
         .session-box {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
+            background: #111;
+            padding: 15px;
             margin-top: 20px;
-            border-radius: 10px;
+            border-radius: 8px;
             display: none;
-        }
-
-        #time-weather {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 18px;
-        }
-
-        @keyframes backgroundMove {
-            0% { background-position: 0 0; }
-            100% { background-position: 100% 100%; }
-        }
-
-        .animated-bg {
-            background-size: 400% 400%;
-            animation: backgroundMove 20s ease infinite;
         }
     </style>
 </head>
 <body>
 
-<div id="time-weather">
-    <div id="clock"></div>
-    <div id="icon" style="font-size: 30px;">☀️</div>
-</div>
+<div class="container">
+    <h1 style="color:#0f0;">Tepthon</h1>
+    <p>استخراج جلسة تليثون - Telegram String Session</p>
 
-<h1 style="color: #0f0;">Tepthon</h1>
-<p>استخراج جلسة تليثون - Telegram String Session</p>
+    <input type="text" id="phone" placeholder="رقم الهاتف الدولي">
+    <input type="text" id="api_id" placeholder="API ID">
+    <input type="text" id="api_hash" placeholder="API HASH">
+    <button onclick="sendCode()">إرسال الكود</button>
 
-<input type="text" id="phone" placeholder="رقم الهاتف الدولي"><br>
-<input type="text" id="api_id" placeholder="API ID"><br>
-<input type="text" id="api_hash" placeholder="API HASH"><br>
-<button onclick="sendCode()">إرسال الكود</button><br>
+    <input type="text" id="code" placeholder="رمز التحقق">
+    <input type="text" id="password" placeholder="كلمة المرور (إن وجدت)">
+    <button onclick="verifyCode()">استخراج الجلسة</button>
 
-<input type="text" id="code" placeholder="رمز التحقق"><br>
-<input type="text" id="password" placeholder="كلمة المرور (إن وُجد)"><br>
-<button onclick="verifyCode()">استخراج الجلسة</button>
-
-<div class="session-box" id="sessionBox">
-    <h3>الجلسة:</h3>
-    <textarea id="session" rows="5" cols="40" readonly></textarea>
+    <div class="session-box" id="sessionBox">
+        <h3>الجلسة:</h3>
+        <textarea id="session" rows="4" cols="40" readonly></textarea>
+    </div>
 </div>
 
 <script>
 let phone_code_hash = "";
 
-function updateClockAndTheme() {
-    const options = { timeZone: "Asia/Amman", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
-    const now = new Date().toLocaleTimeString("en-US", options);
-    document.getElementById("clock").textContent = now;
-
-    const hour = parseInt(now.split(":")[0]);
-    const icon = document.getElementById("icon");
-    const body = document.body;
-
+function updateBackground() {
+    const now = new Date().toLocaleString("en-US", {timeZone: "Asia/Amman"});
+    const hour = new Date(now).getHours();
     if (hour >= 6 && hour < 18) {
-        icon.textContent = "☀️";
-        body.classList.remove("night", "animated-bg");
-        body.classList.add("day", "animated-bg");
+        document.body.style.backgroundImage = "url('https://i.imgur.com/SOZhTzD.jpg')";
     } else {
-        icon.textContent = "🌙";
-        body.classList.remove("day", "animated-bg");
-        body.classList.add("night", "animated-bg");
+        document.body.style.backgroundImage = "url('https://i.imgur.com/h1m2GSV.jpg')";
     }
 }
-
-setInterval(updateClockAndTheme, 1000);
-updateClockAndTheme();
+setInterval(updateBackground, 1000);
+updateBackground();
 
 function sendCode() {
     const phone = document.getElementById("phone").value;
@@ -130,7 +100,7 @@ function sendCode() {
             phone_code_hash = data.phone_code_hash;
             alert("تم إرسال الكود بنجاح!");
         } else {
-            alert("فشل: " + data.error);
+            alert("خطأ: " + data.error);
         }
     });
 }
@@ -145,14 +115,7 @@ function verifyCode() {
     fetch("/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            phone,
-            api_id,
-            api_hash,
-            code,
-            password,
-            phone_code_hash
-        })
+        body: JSON.stringify({ phone, api_id, api_hash, code, password, phone_code_hash })
     })
     .then(res => res.json())
     .then(data => {
