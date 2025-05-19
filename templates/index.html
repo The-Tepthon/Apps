@@ -5,41 +5,73 @@
     <meta charset="UTF-8">
     <title>Tepthon - استخراج الجلسة</title>
     <style>
-        body { background: #121212; color: white; font-family: Arial; text-align: center; padding-top: 50px; }
-        input, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; width: 250px; }
-        button { background-color: #0f0; cursor: pointer; }
-        .session-box { background: #222; padding: 20px; margin-top: 20px; border-radius: 10px; display: none; }
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding-top: 60px;
+            margin: 0;
+            transition: background 1s ease-in-out;
+            background: #000;
+            color: white;
+        }
+
+        .day {
+            background: linear-gradient(to bottom, #87CEEB, #ffffff);
+            color: #000;
+        }
+
+        .night {
+            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+            color: #fff;
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+            width: 260px;
+        }
+
+        button {
+            background-color: #0f0;
+            cursor: pointer;
+        }
+
+        .session-box {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #time-weather {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+        }
+
+        @keyframes backgroundMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .animated-bg {
+            background-size: 400% 400%;
+            animation: backgroundMove 20s ease infinite;
+        }
     </style>
 </head>
-
 <body>
-<div id="time-weather" style="position: absolute; top: 10px; left: 10px; text-align: left;">
-    <div id="clock" style="font-size: 18px;"></div>
+
+<div id="time-weather">
+    <div id="clock"></div>
     <div id="icon" style="font-size: 30px;">☀️</div>
 </div>
 
-<script>
-function updateClockAndIcon() {
-    const options = { timeZone: "Asia/Amman", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
-    const now = new Date().toLocaleTimeString("en-US", options);
-    document.getElementById("clock").textContent = now;
-
-    const hour = parseInt(now.split(":")[0]);
-    const icon = document.getElementById("icon");
-
-    if (hour >= 6 && hour < 18) {
-        icon.textContent = "☀️"; // نهار
-    } else {
-        icon.textContent = "🌧️"; // ليل/مطر
-    }
-}
-
-setInterval(updateClockAndIcon, 1000);
-updateClockAndIcon();
-</script>
-
-
-<h1 style="color: #0f0; animation: bounce 1s infinite;">Tepthon</h1>
+<h1 style="color: #0f0;">Tepthon</h1>
 <p>استخراج جلسة تليثون - Telegram String Session</p>
 
 <input type="text" id="phone" placeholder="رقم الهاتف الدولي"><br>
@@ -59,6 +91,29 @@ updateClockAndIcon();
 <script>
 let phone_code_hash = "";
 
+function updateClockAndTheme() {
+    const options = { timeZone: "Asia/Amman", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
+    const now = new Date().toLocaleTimeString("en-US", options);
+    document.getElementById("clock").textContent = now;
+
+    const hour = parseInt(now.split(":")[0]);
+    const icon = document.getElementById("icon");
+    const body = document.body;
+
+    if (hour >= 6 && hour < 18) {
+        icon.textContent = "☀️";
+        body.classList.remove("night", "animated-bg");
+        body.classList.add("day", "animated-bg");
+    } else {
+        icon.textContent = "🌙";
+        body.classList.remove("day", "animated-bg");
+        body.classList.add("night", "animated-bg");
+    }
+}
+
+setInterval(updateClockAndTheme, 1000);
+updateClockAndTheme();
+
 function sendCode() {
     const phone = document.getElementById("phone").value;
     const api_id = document.getElementById("api_id").value;
@@ -75,7 +130,7 @@ function sendCode() {
             phone_code_hash = data.phone_code_hash;
             alert("تم إرسال الكود بنجاح!");
         } else {
-            alert("فشل الإرسال: " + data.error);
+            alert("فشل: " + data.error);
         }
     });
 }
@@ -90,7 +145,14 @@ function verifyCode() {
     fetch("/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, api_id, api_hash, code, password, phone_code_hash })
+        body: JSON.stringify({
+            phone,
+            api_id,
+            api_hash,
+            code,
+            password,
+            phone_code_hash
+        })
     })
     .then(res => res.json())
     .then(data => {
