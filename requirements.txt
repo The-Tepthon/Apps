@@ -1,4 +1,4 @@
-request
+requests
 flask
 telethon
 python-dotenv
