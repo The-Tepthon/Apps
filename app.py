@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, jsonify, session
-from telethon.sync import TelegramClient
+from telethon import TelegramClient
 from telethon.sessions import StringSession
 import os
 import requests
+import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,7 +25,7 @@ def send_code():
     recaptcha_token = request.form.get('g-recaptcha-response')
 
     if not recaptcha_token:
-        return jsonify({'status': 'error', 'message': 'ظٹط±ط¬ظ‰ طھط£ظƒظٹط¯ ط£ظ†ظƒ ظ„ط³طھ ط±ظˆط¨ظˆطھظ‹ط§'})
+        return jsonify({'status': 'error', 'message': 'يرجى تأكيد أنك لست روبوتًا'})
 
     recaptcha_response = requests.post(
         'https://www.google.com/recaptcha/api/siteverify',
@@ -35,29 +36,26 @@ def send_code():
     ).json()
 
     if not recaptcha_response.get('success'):
-        return jsonify({'status': 'error', 'message': 'ظپط´ظ„ ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† reCAPTCHA'})
+        return jsonify({'status': 'error', 'message': 'فشل التحقق من reCAPTCHA'})
 
     session['phone'] = phone
 
-    try:
-                loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        async def run():
-            async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
-            sent_code = client.send_code_request(phone)
+    async def send_code_async():
+        async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
+            sent_code = await client.send_code_request(phone)
             session['phone_code_hash'] = sent_code.phone_code_hash
-        loop.run_until_complete(run())
 
+    try:
+        asyncio.run(send_code_async())
         return jsonify({
             'status': 'success',
-            'message': 'طھظ… ط¥ط±ط³ط§ظ„ ظƒظˆط¯ ط§ظ„طھط­ظ‚ظ‚',
+            'message': 'تم إرسال كود التحقق',
             'next_step': 'verify_code'
         })
-
     except Exception as e:
         return jsonify({
             'status': 'error',
-            'message': f'ط­ط¯ط« ط®ط·ط£: {str(e)}'
+            'message': f'حدث خطأ: {str(e)}'
         })
 
 @app.route('/verify_code', methods=['POST'])
@@ -66,68 +64,47 @@ def verify_code():
     phone = session.get('phone')
     phone_code_hash = session.get('phone_code_hash')
 
-    try:
-                loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        async def run():
-            async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
+    async def verify_code_async():
+        async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
             try:
-                client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
-        loop.run_until_complete(run())
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
             except Exception as e:
                 if "two-step verification" in str(e).lower():
-                    return jsonify({
-                        'status': '2fa_required',
-                        'message': 'ظٹط·ظ„ط¨ ط­ط³ط§ط¨ظƒ ط§ظ„طھط­ظ‚ظ‚ ط¨ط®ط·ظˆطھظٹظ†'
-                    })
+                    return '2fa_required'
                 else:
-                    return jsonify({
-                        'status': 'error',
-                        'message': 'ط±ظ…ط² ط§ظ„طھط­ظ‚ظ‚ ط؛ظٹط± طµط­ظٹط­ ط£ظˆ ظ…ظ†طھظ‡ظٹ ط§ظ„طµظ„ط§ط­ظٹط©'
-                    })
+                    return 'invalid_code'
 
             session_string = client.session.save()
-            client.send_message('me', f'طھظ… ط§ط³طھط®ط±ط§ط¬ ط§ظ„ط¬ظ„ط³ط© ط¨ظˆط§ط³ط·ط© @Tepthon\n\n{session_string}')
-        loop.run_until_complete(run())
+            await client.send_message('me', f'تم استخراج الجلسة بواسطة @Tepthon\n\n{session_string}')
+            return 'success'
 
-        return jsonify({
-            'status': 'success',
-            'message': 'طھظ… ط§ط³طھط®ط±ط§ط¬ ط§ظ„ط¬ظ„ط³ط© ط¨ظ†ط¬ط§ط­ ظˆط¥ط±ط³ط§ظ„ظ‡ط§ ط¥ظ„ظ‰ ط±ط³ط§ط¦ظ„ظƒ ط§ظ„ظ…ط­ظپظˆط¸ط©'
-        })
-
+    try:
+        result = asyncio.run(verify_code_async())
+        if result == '2fa_required':
+            return jsonify({'status': '2fa_required', 'message': 'يطلب حسابك التحقق بخطوتين'})
+        elif result == 'invalid_code':
+            return jsonify({'status': 'error', 'message': 'رمز التحقق غير صحيح أو منتهي الصلاحية'})
+        else:
+            return jsonify({'status': 'success', 'message': 'تم استخراج الجلسة بنجاح وإرسالها إلى رسائلك المحفوظة'})
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'ط­ط¯ط« ط®ط·ط£: {str(e)}'
-        })
+        return jsonify({'status': 'error', 'message': f'حدث خطأ: {str(e)}'})
 
 @app.route('/verify_2fa', methods=['POST'])
 def verify_2fa():
     password = request.form.get('password')
     phone = session.get('phone')
 
-    try:
-                loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        async def run():
-            async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
-            client.sign_in(phone=phone, password=password)
-        loop.run_until_complete(run())
-
+    async def verify_2fa_async():
+        async with TelegramClient(StringSession(), API_ID, API_HASH) as client:
+            await client.sign_in(phone=phone, password=password)
             session_string = client.session.save()
-            client.send_message('me', f'طھظ… ط§ط³طھط®ط±ط§ط¬ ط§ظ„ط¬ظ„ط³ط© ط¨ظˆط§ط³ط·ط© @Tepthon\n\n{session_string}')
-        loop.run_until_complete(run())
+            await client.send_message('me', f'تم استخراج الجلسة بواسطة @Tepthon\n\n{session_string}')
 
-        return jsonify({
-            'status': 'success',
-            'message': 'طھظ… ط§ط³طھط®ط±ط§ط¬ ط§ظ„ط¬ظ„ط³ط© ط¨ظ†ط¬ط§ط­ ظˆط¥ط±ط³ط§ظ„ظ‡ط§ ط¥ظ„ظ‰ ط±ط³ط§ط¦ظ„ظƒ ط§ظ„ظ…ط­ظپظˆط¸ط©'
-        })
-
+    try:
+        asyncio.run(verify_2fa_async())
+        return jsonify({'status': 'success', 'message': 'تم استخراج الجلسة بنجاح وإرسالها إلى رسائلك المحفوظة'})
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط؛ظٹط± طµط­ظٹط­ط©: {str(e)}'
-        })
+        return jsonify({'status': 'error', 'message': f'كلمة المرور غير صحيحة: {str(e)}'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=True)
