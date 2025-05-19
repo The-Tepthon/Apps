@@ -37,8 +37,8 @@ def verify_code():
     api_id = int(data.get('api_id'))
     api_hash = data.get('api_hash')
     code = data.get('code')
-    password = data.get('password', None)
     phone_code_hash = data.get('phone_code_hash')
+    password = data.get('password', None)
 
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
