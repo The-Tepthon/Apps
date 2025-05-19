@@ -13,9 +13,9 @@ def home():
 @app.route("/send-code", methods=["POST"])
 def send_code():
     data = request.json
-    phone = data.get('phone')
-    api_id = int(data.get('api_id'))
-    api_hash = data.get('api_hash')
+    phone = data.get("phone")
+    api_id = int(data.get("api_id"))
+    api_hash = data.get("api_hash")
 
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
@@ -33,28 +33,19 @@ def send_code():
 @app.route("/verify-code", methods=["POST"])
 def verify_code():
     data = request.json
-    phone = data.get('phone')
-    api_id = int(data.get('api_id'))
-    api_hash = data.get('api_hash')
-    code = data.get('code')
-    phone_code_hash = data.get('phone_code_hash')
-    password = data.get('password', None)
+    phone = data.get("phone")
+    api_id = int(data.get("api_id"))
+    api_hash = data.get("api_hash")
+    code = data.get("code")
+    phone_code_hash = data.get("phone_code_hash")
+    password = data.get("password", None)
 
     async def run():
         async with TelegramClient(StringSession(), api_id, api_hash) as client:
             if password:
-                await client.sign_in(
-                    phone=phone,
-                    code=code,
-                    phone_code_hash=phone_code_hash,
-                    password=password
-                )
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
             else:
-                await client.sign_in(
-                    phone=phone,
-                    code=code,
-                    phone_code_hash=phone_code_hash
-                )
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
             return client.session.save()
 
     try:
